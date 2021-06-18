@@ -1,3 +1,8 @@
+"""
+Created on Mon May 17 11:03:04 2021
+Terachem optimization field with PCM with assigned w
+@author: user
+"""
 import subprocess
 import time
 from shutil import copyfile
