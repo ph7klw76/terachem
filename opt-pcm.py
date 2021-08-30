@@ -61,6 +61,8 @@ def make_ts_file(mybasis,myfile,function,w=0,epsilon=0,dftd='no',run='minimize',
         ts_file.write('\n')
         ts_file.write('cisnumstates '+str(excited))
         ts_file.write('\n')
+        ts_file.write('cismaxiter 200')
+        ts_file.write('\n')
     if run=='minimize':   
         ts_file.write('run minimize')
     if run=='energy':   
