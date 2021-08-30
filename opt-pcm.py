@@ -72,7 +72,7 @@ def make_sh_file(myfile):
             f.write('\n')
         if i==19:
             openfile=myfile+'.ts'
-            line2='terachem /scratch/woon/GPU03/'+openfile
+            line2='terachem '+os.getcwd()+'/'+openfile
             line2=str(line2)
             f.write(line2)
             f.write('\n')
