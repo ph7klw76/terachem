@@ -9,17 +9,16 @@ from shutil import copyfile
 import numpy as np
 import math
 import os
-
-
-def make_ts_file(mybasis,myfile,function,w,epsilon,run='minimize',charge=0,spinmult=1):
+def make_ts_file(mybasis,myfile,function,w=0,epsilon=0,dftd='no',run='minimize',charge=0,spinmult=1, resp=False, excited='0'):
     basis='basis    '+mybasis
     myco=myfile+'.xyz'
     w='rc_w'+'  '+str(w)
-    epsilon='epsilon'+'  '+str(epsilon)
-    if (run=='minimize'and charge==-1):
-        thepath=myfile+'add_E.xyz'
-        if os.path.isfile(thepath):
-            myco=myfile+'add_E.xyz'   
+    if epsilon!=0:
+        epsilon='epsilon'+'  '+str(epsilon)
+        if (run=='minimize'and charge==-1):
+            thepath=myfile+'add_E.xyz'
+            if os.path.isfile(thepath):
+                myco=myfile+'add_E.xyz'   
     coordinates='coordinates    '+myco
     openfile=myfile+'.ts'
     charge1='charge          '+str(charge)
@@ -33,31 +32,48 @@ def make_ts_file(mybasis,myfile,function,w,epsilon,run='minimize',charge=0,spinm
     ts_file.write('\n')
     ts_file.write(spinmult)
     ts_file.write('\n')
-    if charge==0:
+    if charge==0 and spinmult==1 :
         my_function='method    '+str(function)
         ts_file.write(my_function)
-    if charge!=0:
+    if charge!=0 or spinmult!=1 or excited!='0':
         my_function='method    '+'u'+str(function)
         ts_file.write(my_function)
     ts_file.write('\n')
-    ts_file.write('min_coordinates cartesian')
-    ts_file.write('\n')
+    if dftd!='no':
+        dftd='dftd '+str(dftd)
+        ts_file.write(dftd)
+        ts_file.write('\n')
+    if epsilon!=0:
+        ts_file.write(epsilon)
+        ts_file.write('\n')
+        ts_file.write('pcm cosmo')
+        ts_file.write('\n')
+    if run=='minimize':   
+        ts_file.write('min_coordinates cartesian')
+        ts_file.write('\n')
     ts_file.write('maxit 500')
     ts_file.write('\n')
-    ts_file.write(w)
-    ts_file.write('\n')
-    ts_file.write('pcm cosmo')
-    ts_file.write('\n')
-    ts_file.write(epsilon)
-    ts_file.write('\n')
+    if w!=0:
+        ts_file.write(w)
+        ts_file.write('\n')
+    if excited!='0':
+        ts_file.write('cis yes')
+        ts_file.write('\n')
+        ts_file.write('cisnumstates '+str(excited))
+        ts_file.write('\n')
     if run=='minimize':   
         ts_file.write('run minimize')
     if run=='energy':   
         ts_file.write('run energy')
     ts_file.write('\n')
+    if resp==True:
+        ts_file.write('resp	yes')
+        ts_file.write('\n')
     ts_file.write('end')
     ts_file.write('\n')
     ts_file.close()
+    return run
+
 
 
 def make_sh_file(myfile):
@@ -120,15 +136,19 @@ def replace_xyz(myfile,new_file=False):
             write_newxyz.write(line1)
     write_newxyz.close()
 
-mybasislist=['sto-3g','3-21g','cc-pvdz','aug-cc-pvdz']
-myfilelist=['TOL']
+mybasislist=['def2-SVP']
+myfilelist=['optfr2']
 for myfile in myfilelist:
     for basis in mybasislist:
-        make_ts_file(basis,myfile,'wpbeh',0.074,2.34)
+        jobtype=make_ts_file(basis,myfile,'b3lyp',w=0,epsilon=2.38,run='energy',spinmult=1,excited='3')
         make_sh_file(myfile)
         done=check_run_status()
         time.sleep(10)
-        replace_xyz(myfile,new_file=False)
-    myco=myfile+'.xyz'
-    mynewco='opt'+myfile+'.xyz'
-    os.rename(myco, mynewco)
+        if jobtype!='energy':
+            replace_xyz(myfile,new_file=False)
+    if jobtype!='energy':
+        myco=myfile+'.xyz'
+        mynewco='opt'+myfile+'.xyz'
+        os.rename(myco, mynewco)
+    time.sleep(10)
+
