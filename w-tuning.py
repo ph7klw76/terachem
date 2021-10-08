@@ -4,6 +4,7 @@ from shutil import copyfile
 import numpy as np
 import math
 import os
+import re
 
 
 def make_ts_file(mybasis,myfile,myw,run='minimize',charge=0,spinmult=1):
@@ -28,23 +29,25 @@ def make_ts_file(mybasis,myfile,myw,run='minimize',charge=0,spinmult=1):
     ts_file.write(spinmult)
     ts_file.write('\n')
     if charge==0:
-        ts_file.write('method          wPBE')
+        ts_file.write('method          wB97x')
     if charge!=0:
-        ts_file.write('method          uwPBE')
+        ts_file.write('method          uwB97x')
     ts_file.write('\n')
     ts_file.write(rc_w)
     ts_file.write('\n')
     ts_file.write('pcm cosmo')
     ts_file.write('\n')
-    ts_file.write('epsilon 2.38')
+    ts_file.write('epsilon 6')
     ts_file.write('\n')
-    ts_file.write('dispersion       d3')
+    ts_file.write('dispersion       yes')
     ts_file.write('\n')
     ts_file.write('pcm_scale 1')
     ts_file.write('\n')
     ts_file.write('min_coordinates cartesian')
     ts_file.write('\n')
     ts_file.write('maxit 500')
+    ts_file.write('\n')
+    ts_file.write('solvent_radius 	3.48')
     ts_file.write('\n')
     if run=='minimize':   
         ts_file.write('run minimize')
@@ -55,23 +58,74 @@ def make_ts_file(mybasis,myfile,myw,run='minimize',charge=0,spinmult=1):
     ts_file.write('\n')
     ts_file.close()
 
+
+def make_ts_file_EST(mybasis,myfile,myw,run='energy',charge=0,spinmult=1, cal='singlet'):
+    basis='basis    '+mybasis
+    rc_w='rc_w '+str(myw)
+    myco=str(myfile)+'.xyz'
+    coordinates='coordinates    '+myco
+    openfile='./'+str(myfile)+'.ts'
+    charge1='charge          '+str(charge)
+    spinmult='spinmult      '+str(spinmult)
+    ts_file=open(openfile, 'w')
+    ts_file.write(basis)
+    ts_file.write('\n')
+    ts_file.write(coordinates)
+    ts_file.write('\n')
+    ts_file.write(charge1)
+    ts_file.write('\n')
+    ts_file.write(spinmult)
+    ts_file.write('\n')
+    if cal=='singlet':
+        ts_file.write('method          wB97x')
+    if cal=='triplet':
+        ts_file.write('method          uwB97x')
+    ts_file.write('\n')
+    ts_file.write(rc_w)
+    ts_file.write('\n')
+    ts_file.write('pcm cosmo')
+    ts_file.write('\n')
+    ts_file.write('epsilon 6')
+    ts_file.write('\n')
+    ts_file.write('pcm_scale 1')
+    ts_file.write('\n')
+    ts_file.write('dispersion       yes')
+    ts_file.write('\n')
+    ts_file.write('cismaxiter 500')
+    ts_file.write('\n')
+    ts_file.write('cis yes')
+    ts_file.write('\n')
+    ts_file.write('solvent_radius 	3.48')
+    ts_file.write('\n')
+    ts_file.write('cisnumstates 1')
+    ts_file.write('\n')
+    if run=='minimize':   
+        ts_file.write('run minimize')
+    if run=='energy':   
+        ts_file.write('run energy')
+    ts_file.write('\n')
+    ts_file.write('end')
+    ts_file.write('\n')
+    ts_file.close()
+
+
 def make_sh_file(myfile):
-    sh_file=myfile+'.sh'
+    sh_file=str(myfile)+'.sh'
     f = open(sh_file, 'w')
     sh= open('./terachem22.sh')
     for i, line in enumerate(sh):
-        if i==5:
+        if i==4:
             line1='#SBATCH --job-name='+myfile
             line1=str(line1)
             f.write(line1)
             f.write('\n')
-        if i==20:
+        if i==19:
             openfile=myfile+'.ts'
-            line2='terachem /scratch/woon/GPU03/'+openfile
+            line2='terachem '+os.getcwd()+'/'+openfile
             line2=str(line2)
             f.write(line2)
             f.write('\n')
-        if (i !=5 and i !=20):
+        if (i !=4 and i !=19):
             f.write(line)
     f.close()
     path='./'+ sh_file
@@ -91,7 +145,7 @@ def check_run_status():
         time.sleep(10)
         process=subprocess.run(check_status, shell=True, check=True, stdout=subprocess.PIPE, universal_newlines=True)
         output = process.stdout 
-    return True
+    return True,job_id
 
 def extract_HOMO_LUMO(myfile):
     mymolden='./scr/' +myfile+'.molden'
@@ -192,14 +246,60 @@ def gss(J, a, b,mybasis,myfile, tol=0.01):
         d = a + (b - a) / gr
     return (b + a) / 2
 
-mybasis='cc-pvdz'
-myfile='optLS16'
 
-w_final=gss(w_tuning,0.04,0.08,mybasis,myfile)
-make_ts_file(mybasis,myfile,w_final)
-make_sh_file(myfile)
-done=check_run_status()
-time.sleep(10)
-myco=myfile+'.xyz'
-mynewco=myfile+str(w_final)+'.xyz'
-os.rename(myco, mynewco)
+def extractxyzfromscan(molecule):
+    mymolecule=[]
+    f=open('./scr/scan_optim.xyz', 'r') #you can change the path pf oroginal file
+    line1=f.readline()
+    line1=int(line1)
+    count = len(f.readlines())
+    numberofmolecule=int(count/(line1+1))
+    for i,line in enumerate(open('./scr/scan_optim.xyz', 'r')):
+        filetowrite='./'+str(molecule)
+        myfilename=(i)//(line1+2)
+        if -1 < i <=(line1+2)*numberofmolecule:
+            filetowrite=filetowrite+str(myfilename)+'.xyz'
+            f2=open(filetowrite, 'a')
+            f2.write(line)
+    f2.close()
+    pathofmylistofmolecule=open('./mylistest.txt','w')
+    for i in range(numberofmolecule):
+        mylistofmolecule=str(molecule)+str(i)
+        pathofmylistofmolecule.write(mylistofmolecule)
+        pathofmylistofmolecule.write('\n')  
+    pathofmylistofmolecule.close()
+
+def extractexcitation(idname,datafile,angle,typeE):
+    idname='./slurm-'+str(idname)+'.out'
+    path=open(idname)
+    ii=1000000000
+    mydatafile='./'+str(datafile)+'.txt'
+    if os.path.exists(mydatafile):
+        append_write = 'a' # append if already exists
+    else:
+        append_write = 'w' # make a new file if not
+    with open(mydatafile, append_write) as f:
+        for i,line in enumerate(path):
+            if line.__contains__("Final Excited State Results:"):
+                ii=i
+            if i==ii+4:
+                line=re.split('\s+', line)
+                line=str(line)
+                line=line.split(',')
+                lineE=line[3]
+                lineO=line[4]
+                f.write(str(typeE)+' , '+str(angle)+' , '+lineE+' , '+lineO)
+                f.write('\n')
+                print(line, i)
+
+mybasis='def2-SVP'
+myfilelist=['optsolar-cell-DBT1','optsolar-cell-DBT2','optsolar-cell-DBT3']
+for myfile in myfilelist:
+    w_final=gss(w_tuning,0.00,0.05,mybasis,myfile)
+    make_ts_file(mybasis,myfile,w_final)
+    make_sh_file(myfile)
+    done=check_run_status()
+    time.sleep(10)
+    myco=myfile+'.xyz'
+    mynewco=myfile+str(w_final)+'.xyz'
+    os.rename(myco, mynewco)
