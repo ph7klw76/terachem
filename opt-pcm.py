@@ -32,7 +32,7 @@ def make_ts_file(mybasis,myfile,function,w=0,epsilon=0,dftd='no',run='minimize',
     ts_file.write('\n')
     ts_file.write(spinmult)
     ts_file.write('\n')
-    if charge==0 and spinmult==1 :
+    if charge==0 and spinmult==1 and excited=='0':
         my_function='method    '+str(function)
         ts_file.write(my_function)
     if charge!=0 or spinmult!=1 or excited!='0':
