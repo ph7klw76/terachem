@@ -3,16 +3,10 @@ Created on Mon May 17 11:03:04 2021
 Terachem optimization field with PCM with assigned w
 @author: user
 """
-import subprocess
-import time
-from shutil import copyfile
-import numpy as np
-import math
-import os
-def make_ts_file(mybasis,myfile,function,w=0,epsilon=0,dftd='no',run='minimize',charge=0,spinmult=1, resp=False, excited='0'):
+def make_ts_file(mybasis,myfile,function,w=0,epsilon=0,dftd='no',run='minimize',charge=0,spinmult=1, resp=False, restricted='yes', excited='no', state=0):
     basis='basis    '+mybasis
     myco=myfile+'.xyz'
-    w='rc_w'+'  '+str(w)
+    ww='rc_w'+'  '+str(w)
     if epsilon!=0:
         epsilon='epsilon'+'  '+str(epsilon)
         if (run=='minimize'and charge==-1):
@@ -32,10 +26,10 @@ def make_ts_file(mybasis,myfile,function,w=0,epsilon=0,dftd='no',run='minimize',
     ts_file.write('\n')
     ts_file.write(spinmult)
     ts_file.write('\n')
-    if charge==0 and spinmult==1 and excited=='0':
+    if restricted=='yes':
         my_function='method    '+str(function)
         ts_file.write(my_function)
-    if charge!=0 or spinmult!=1 or excited!='0':
+    if restricted=='no':
         my_function='method    '+'u'+str(function)
         ts_file.write(my_function)
     ts_file.write('\n')
@@ -56,10 +50,10 @@ def make_ts_file(mybasis,myfile,function,w=0,epsilon=0,dftd='no',run='minimize',
     if w!=0:
         ts_file.write(w)
         ts_file.write('\n')
-    if excited!='0':
+    if excited=='yes':
         ts_file.write('cis yes')
         ts_file.write('\n')
-        ts_file.write('cisnumstates '+str(excited))
+        ts_file.write('cisnumstates '+str(state))
         ts_file.write('\n')
         ts_file.write('cismaxiter 200')
         ts_file.write('\n')
@@ -78,13 +72,13 @@ def make_ts_file(mybasis,myfile,function,w=0,epsilon=0,dftd='no',run='minimize',
 
 
 
-def make_sh_file(myfile):
+def make_sh_file(myfile,ST):
     sh_file=str(myfile)+'.sh'
     f = open(sh_file, 'w')
     sh= open('./terachem22.sh')
     for i, line in enumerate(sh):
         if i==4:
-            line1='#SBATCH --job-name='+myfile
+            line1='#SBATCH --job-name='+myfile+str(ST)
             line1=str(line1)
             f.write(line1)
             f.write('\n')
@@ -138,12 +132,22 @@ def replace_xyz(myfile,new_file=False):
             write_newxyz.write(line1)
     write_newxyz.close()
 
+def generate_listofname(file):
+    a=[]
+    file='./'+str(file)+'.txt'
+    f=open(file,'r')
+    for i, compound in enumerate(f):
+        compound=compound.strip('\n')
+        a.append(compound)
+    return a 
+
+
 mybasislist=['def2-SVP']
 myfilelist=['optfr2']
 for myfile in myfilelist:
     for basis in mybasislist:
-        jobtype=make_ts_file(basis,myfile,'b3lyp',w=0,epsilon=2.38,run='energy',spinmult=1,excited='3')
-        make_sh_file(myfile)
+        jobtype=make_ts_file(basis,myfile,'wpbeh',w=0,epsilon=2.38,run='minimize',charge=0,spinmult=1,restricted='yes', excited='no')
+        make_sh_file(myfile,'minimize')
         done=check_run_status()
         time.sleep(10)
         if jobtype!='energy':
