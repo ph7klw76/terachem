@@ -3,6 +3,12 @@ Created on Mon May 17 11:03:04 2021
 Terachem optimization field with PCM with assigned w
 @author: user
 """
+import subprocess
+import time
+from shutil import copyfile
+import numpy as np
+import math
+import os
 def make_ts_file(mybasis,myfile,function,w=0,epsilon=0,dftd='no',run='minimize',charge=0,spinmult=1, resp=False, restricted='yes', excited='no', state=0):
     basis='basis    '+mybasis
     myco=myfile+'.xyz'
@@ -14,7 +20,12 @@ def make_ts_file(mybasis,myfile,function,w=0,epsilon=0,dftd='no',run='minimize',
             if os.path.isfile(thepath):
                 myco=myfile+'add_E.xyz'   
     coordinates='coordinates    '+myco
-    openfile=myfile+'.ts'
+    filename=myfile+str(run)
+    if restricted=='yes' and excited=='yes':
+        filename=myfile+str(run)+'singlet'
+    if restricted=='no' and excited=='yes':
+        filename=myfile+str(run)+'triplet'
+    openfile=filename+'.ts'
     charge1='charge          '+str(charge)
     spinmult='spinmult      '+str(spinmult)
     ts_file=open(openfile, 'w')
@@ -68,17 +79,15 @@ def make_ts_file(mybasis,myfile,function,w=0,epsilon=0,dftd='no',run='minimize',
     ts_file.write('end')
     ts_file.write('\n')
     ts_file.close()
-    return run
+    return run,filename
 
-
-
-def make_sh_file(myfile,ST):
+def make_sh_file(myfile):
     sh_file=str(myfile)+'.sh'
     f = open(sh_file, 'w')
     sh= open('./terachem22.sh')
     for i, line in enumerate(sh):
         if i==4:
-            line1='#SBATCH --job-name='+myfile+str(ST)
+            line1='#SBATCH --job-name='+myfile
             line1=str(line1)
             f.write(line1)
             f.write('\n')
@@ -141,20 +150,15 @@ def generate_listofname(file):
         a.append(compound)
     return a 
 
-
 mybasislist=['def2-SVP']
-myfilelist=['optfr2']
+myfilelist=generate_listofname('test')
 for myfile in myfilelist:
     for basis in mybasislist:
-        jobtype=make_ts_file(basis,myfile,'wpbeh',w=0,epsilon=2.38,run='minimize',charge=0,spinmult=1,restricted='yes', excited='no')
-        make_sh_file(myfile,'minimize')
-        done=check_run_status()
-        time.sleep(10)
-        if jobtype!='energy':
-            replace_xyz(myfile,new_file=False)
-    if jobtype!='energy':
-        myco=myfile+'.xyz'
-        mynewco='opt'+myfile+'.xyz'
-        os.rename(myco, mynewco)
-    time.sleep(10)
+        jobtype,filename=make_ts_file(basis,myfile,'b3lyp',w=0,epsilon=2.38,run='energy',charge=0,spinmult=1,restricted='no',excited='yes', state=1)
+        make_sh_file(filename)
+        time.sleep(2)
+        jobtype,filename=make_ts_file(basis,myfile,'b3lyp',w=0,epsilon=2.38,run='energy',charge=0,spinmult=1,restricted='yes',excited='yes', state=1)
+        make_sh_file(filename)
+        time.sleep(2)
+
 
