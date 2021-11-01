@@ -226,7 +226,7 @@ def w_tuning(mybasis,myw,myfile):
     return error
 
 
-def gss(J, a, b,mybasis,myfile, tol=0.01):
+def gss(a, b,mybasis,myfile, tol=0.01):
     listofw=open('./w_file.txt', 'w')
     gr = (math.sqrt(5) + 1) / 2
     c = b - (b - a) / gr
