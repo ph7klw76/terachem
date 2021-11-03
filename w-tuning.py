@@ -242,7 +242,6 @@ def gss(a, b,mybasis,myfile, tol=0.01):
         txt='w1= '+ str(c)+ 'J1= '+ str(J1)+'w2= '+ str(d) + ' J2= '+str(J2)
         listofw.write(txt)
         listofw.write('/n')
-        listofw.close()
         c = b - (b - a) / gr
         d = a + (b - a) / gr
     return (b + a) / 2
