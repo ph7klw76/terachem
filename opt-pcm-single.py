@@ -13,10 +13,6 @@ import io
 def make_ts_file(mybasis,myfile,function,w=0,epsilon=0,dftd='no',run='minimize',charge=0,spinmult=1,dispersion='no', resp=False, restricted='yes', excited='no', state=0, highmethod1='no',highmethod2='no'):
     basis='basis    '+mybasis
     myco=myfile+'.xyz'
-    if w!=0:
-        ww='rc_w'+'  '+str(w)
-        ts_file.write(ww)
-        ts_file.write('\n')
     if epsilon!=0:
         epsilon='epsilon'+'  '+str(epsilon)
         if (run=='minimize'and charge==-1):
@@ -41,6 +37,10 @@ def make_ts_file(mybasis,myfile,function,w=0,epsilon=0,dftd='no',run='minimize',
     ts_file.write('\n')
     ts_file.write(spinmult)
     ts_file.write('\n')
+    if w!=0:
+        ww='rc_w'+'  '+str(w)
+        ts_file.write(ww)
+        ts_file.write('\n')
     if restricted=='yes':
         my_function='method    '+str(function)
         ts_file.write(my_function)
@@ -53,6 +53,7 @@ def make_ts_file(mybasis,myfile,function,w=0,epsilon=0,dftd='no',run='minimize',
         ts_file.write(dftd)
         ts_file.write('\n')
     if epsilon!=0:
+        epsilon=str(epsilon)
         ts_file.write(epsilon)
         ts_file.write('\n')
         ts_file.write('pcm cosmo')
