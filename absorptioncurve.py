@@ -30,7 +30,7 @@ for i, line in enumerate(readfile):
     absorption=absorption+ei(lamda0,lamda1,f,sigma)
 plt.plot(lamda1,absorption)
 plt.show()
-data=data=np.stack((lamda1, absorption),axis=1)
+data=np.stack((lamda1, absorption),axis=1)
 savefile=open('E:/LS11-absorption.txt','w') 
 np.savetxt(savefile, data)
 savefile.close()
