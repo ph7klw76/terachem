@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 """
 Created on Tue Apr 19 12:48:46 2022
 simulate absortion curve from Teracham MD
@@ -12,7 +12,7 @@ def ei(lamda0,lamda1,f,sigma):
     ei=1.3062974e8*f/(1e7/sigma)
     e=((1.0/lamda1-1.0/lamda0)/(1.0/sigma))**2
     ei=ei*np.exp(-e)
-    return ei/1e10
+    return ei
 
 readfile=open('E:/LS11.txt','r')  
 n=10000
@@ -30,3 +30,8 @@ for i, line in enumerate(readfile):
     absorption=absorption+ei(lamda0,lamda1,f,sigma)
 plt.plot(lamda1,absorption)
 plt.show()
+data=data=np.stack((lamda1, absorption),axis=1)
+savefile=open('E:/LS11-absorption.txt','w') 
+np.savetxt(savefile, data)
+savefile.close()
+readfile.close()
