@@ -1,4 +1,9 @@
-#""
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Apr 19 12:48:46 2022
+simulate absortion curve from Teracham MD
+@author: User
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 #  lamda in nm and sigma in eV lamda0 is the excitation wavelength
@@ -29,14 +34,13 @@ data=np.stack((lamda1, absorption),axis=1)
 readfile=open('F:/LS12/MD/result.txt','r')  
 absorption=[0]*n
 absorption=np.asarray(absorption)
-location=np.where(data == np.max(data))[0][0]
-wavemax=data[int(location)][0]
-shift=1239.84/252.53-1239.84/wavemax
+# shift=0
+shift=1239.84/252.53-1239.84/487.2
 for i, line in enumerate(readfile):
     line1=line.split()
     f=float(line1[4])
     if f==0.0000:
-        f=0.0000
+        f=0.000025
     lamda00=1239.84/(float(line1[3])+shift)
     absorption=absorption+ei(lamda00,lamda1,f,sigma)
 
