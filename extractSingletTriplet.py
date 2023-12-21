@@ -1,28 +1,21 @@
-def extract_ST(file):
-    S=[]
-    T=[]
-    with open(file,'r') as f1:
-        for i, line in enumerate(f1):
-            line=line.strip('\n')
-            if '3  singlet' in line:
-                S1=line.split()[4]
-                S.append(float(S1))
-            line=line.strip('\n')
-            if '4  singlet' in line:
-                S1=line.split()[4]
-                S.append(S1)
-            if '5  singlet'in line:
-                S1=line.split()[4]
-                S.append(float(S1))
-            if '2  triplet' in line:
-                T1=line.split()[4]
-                T.append(float(T1))
-            line=line.strip('\n')
-            if '3  triplet' in line:
-                T1=line.split()[4]
-                T.append(T1)
-            if '4  triplet'in line:
-                T1=line.split()[4]
-                T.append(float(T1))
-    return min(S), min(T)
-    f1.close()
+def extract_energy(file):
+    singlets = []
+    triplets = []
+    oscillator_strengths = []
+
+    with open(file, 'r') as f:
+        for line in f:
+            parts = line.strip().split()
+            if len(parts) < 7:  # Skip lines that don't have enough data
+                continue
+
+            if 'singlet' in line:
+                energy = float(parts[4])
+                osc_strength = float(parts[6]) if 'singlet' in parts else 0.0
+                singlets.append(energy)
+                oscillator_strengths.append(osc_strength)
+            elif 'triplet' in line:
+                energy = float(parts[4])
+                triplets.append(energy)
+
+    return singlets, triplets, oscillator_strengths
