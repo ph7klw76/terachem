@@ -109,8 +109,10 @@ def make_ts_file(mybasis,myfile,myw,run='minimize',charge=0,spinmult=1):
     basis='basis    '+mybasis
     rc_w='rc_w '+str(myw)
     myco=myfile+'.xyz'
+    filename=myfile
     if (run=='minimize'and charge==-1):
         thepath=myfile+'add_E.xyz'
+        filename=myfile+'add_E'
         if os.path.isfile(thepath):
             myco=myfile+'add_E.xyz'   
     coordinates='coordinates    '+myco
@@ -153,6 +155,7 @@ def make_ts_file(mybasis,myfile,myw,run='minimize',charge=0,spinmult=1):
     ts_file.write('end')
     ts_file.write('\n')
     ts_file.close()
+    return filename
 
 
 def make_ts_file_EST(mybasis,myfile,myw,run='energy',charge=0,spinmult=1, cal='singlet'):
@@ -256,7 +259,7 @@ def extract_HOMO_LUMO(myfile):
     return HOMO,LUMO
 
 def extract_Energy(myfile):
-    myfile1='./scr.'+myfile+'/'+'results.dat'
+    myfile1='./scr.'+myfile+'/results.dat'
     myfile1=open(myfile1,'r')
     for i,line in enumerate(myfile1):
         if i==1:
@@ -301,13 +304,13 @@ def w_tuning(mybasis,myw,myfile):
     make_ts_file(mybasis,myfile,myw,run='minimize',charge=-1,spinmult=2) #add one electron
     make_sh_file(myfile)
     time.sleep(5)
+    myfile2=myfile+'add_E' #new file
     replace_xyz(myfile,new_file=True)
     time.sleep(5)
     Energy_n1=extract_Energy(myfile)
-    myfile2=myfile+'add_E' #new file
     make_ts_file(mybasis,myfile2,myw,run='energy',charge=0,spinmult=1)  
     make_sh_file(myfile2)
-    time.sleep(5)
+    time.sleep(15)
     Energy_n1p0=extract_Energy(myfile2)
     errorH=(float(Energy0)-float(Energy_0p1))-float(HOMO)
     errorL=(float(Energy_n1)-float(Energy_n1p0))-float(LUMO)
@@ -413,6 +416,8 @@ for myfile in myfilelist:
     jobtype,filename=make_ts_file_op(mybasis,myfile+str(w_final),'wpbeh',w=w_final,epsilon=6.12,run='energy',restricted='no', excited='yes', state=6)
     make_sh_file(filename)
     time.sleep(10)
+
+
 
 
 
