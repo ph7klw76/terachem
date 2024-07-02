@@ -135,7 +135,7 @@ def make_ts_file(mybasis,myfile,myw,run='minimize',charge=0,spinmult=1):
     ts_file.write('\n')
     ts_file.write('pcm cosmo')
     ts_file.write('\n')
-    ts_file.write('epsilon 2.3741')
+    ts_file.write('epsilon 8.930')
     ts_file.write('\n')
     ts_file.write('pcm_scale 1')
     ts_file.write('\n')
@@ -181,7 +181,7 @@ def make_ts_file_EST(mybasis,myfile,myw,run='energy',charge=0,spinmult=1, cal='s
     ts_file.write('\n')
     ts_file.write('pcm cosmo')
     ts_file.write('\n')
-    ts_file.write('epsilon 2.3741')
+    ts_file.write('epsilon 8.930')
     ts_file.write('\n')
     ts_file.write('pcm_scale 1')
     ts_file.write('\n')
@@ -256,7 +256,7 @@ def extract_HOMO_LUMO(myfile):
     return HOMO,LUMO
 
 def extract_Energy(myfile):
-    myfile1='./scr'+'/'+'results.dat'
+    myfile1='./scr.'+myfile+'/'+'results.dat'
     myfile1=open(myfile1,'r')
     for i,line in enumerate(myfile1):
         if i==1:
@@ -413,6 +413,8 @@ for myfile in myfilelist:
     jobtype,filename=make_ts_file_op(mybasis,myfile+str(w_final),'wpbeh',w=w_final,epsilon=6.12,run='energy',restricted='no', excited='yes', state=6)
     make_sh_file(filename)
     time.sleep(10)
+
+
 
 
 
