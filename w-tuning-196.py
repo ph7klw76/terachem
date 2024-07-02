@@ -88,6 +88,8 @@ def make_ts_file_op(mybasis,myfile,function,w=0,epsilon=0,dftd='no',run='minimiz
         ts_file.write('cismaxiter 200')
         ts_file.write('\n')
     if run=='minimize':
+        ts_file.write('opt_maxiter 2000')
+        ts_file.write('\n')  
         ts_file.write('new_minimizer yes')
         ts_file.write('\n')  
         ts_file.write('run minimize')
@@ -102,10 +104,10 @@ def make_ts_file_op(mybasis,myfile,function,w=0,epsilon=0,dftd='no',run='minimiz
     ts_file.close()
     return run,filename
 
-def make_ts_file(mybasis,myfile,myw,epsilon=1.0,run='minimize',charge=0,spinmult=1):
+
+def make_ts_file(mybasis,myfile,myw,run='minimize',charge=0,spinmult=1):
     basis='basis    '+mybasis
     rc_w='rc_w '+str(myw)
-    epsilon='epsilon '+str(epsilon)
     myco=myfile+'.xyz'
     if (run=='minimize'and charge==-1):
         thepath=myfile+'add_E.xyz'
@@ -133,7 +135,7 @@ def make_ts_file(mybasis,myfile,myw,epsilon=1.0,run='minimize',charge=0,spinmult
     ts_file.write('\n')
     ts_file.write('pcm cosmo')
     ts_file.write('\n')
-    ts_file.write(epsilon)
+    ts_file.write('epsilon 2.3741')
     ts_file.write('\n')
     ts_file.write('pcm_scale 1')
     ts_file.write('\n')
@@ -153,10 +155,9 @@ def make_ts_file(mybasis,myfile,myw,epsilon=1.0,run='minimize',charge=0,spinmult
     ts_file.close()
 
 
-def make_ts_file_EST(mybasis,myfile,myw,epsilon=1.0,run='energy',charge=0,spinmult=1, cal='singlet'):
+def make_ts_file_EST(mybasis,myfile,myw,run='energy',charge=0,spinmult=1, cal='singlet'):
     basis='basis    '+mybasis
     rc_w='rc_w '+str(myw)
-    epsilon='epsilon '+str(epsilon)
     myco=str(myfile)+'.xyz'
     coordinates='coordinates    '+myco
     openfile='./'+str(myfile)+'.ts'
@@ -180,7 +181,7 @@ def make_ts_file_EST(mybasis,myfile,myw,epsilon=1.0,run='energy',charge=0,spinmu
     ts_file.write('\n')
     ts_file.write('pcm cosmo')
     ts_file.write('\n')
-    ts_file.write(epsilon)
+    ts_file.write('epsilon 2.3741')
     ts_file.write('\n')
     ts_file.write('pcm_scale 1')
     ts_file.write('\n')
@@ -237,7 +238,7 @@ def check_run_status():
     return True,job_id
 
 def extract_HOMO_LUMO(myfile):
-    mymolden='./scr.'+str(myfile)+'/'+myfile+'.molden'
+    mymolden='./scr.'+myfile+'/'+myfile+'.molden'  ##########new
     read_file=open(mymolden)
     n=0
     for i, line in enumerate(read_file):
@@ -255,7 +256,7 @@ def extract_HOMO_LUMO(myfile):
     return HOMO,LUMO
 
 def extract_Energy(myfile):
-    myfile1='./scr.'+str(myfile)+'/'+'results.dat'
+    myfile1='./scr'+'/'+'results.dat'
     myfile1=open(myfile1,'r')
     for i,line in enumerate(myfile1):
         if i==1:
@@ -269,9 +270,9 @@ def replace_xyz(myfile,new_file=False):
     fline=int(fline)
     b=0
     while b==0:
-        b = os.path.getsize('./scr.'+str(myfile)+'/'+'optim.xyz')
+        b = os.path.getsize('./scr.'+myfile+'/optim.xyz')   ###############  
     time.sleep(10)    
-    read_file3=open('./scr.'+str(myfile)+'/'+'optim.xyz')
+    read_file3=open('./scr.'+myfile+'/optim.xyz')   ###########
     if new_file==True:
         mynewco=myfile+'add_E.xyz'
         write_newxyz=open('./'+mynewco, 'w')
@@ -285,26 +286,26 @@ def replace_xyz(myfile,new_file=False):
             write_newxyz.write(line1)
     write_newxyz.close()
 
-def w_tuning(mybasis,myw,myfile,epsilon):
-    make_ts_file(mybasis,myfile,myw,epsilon)
+def w_tuning(mybasis,myw,myfile):
+    make_ts_file(mybasis,myfile,myw)
     make_sh_file(myfile)
     time.sleep(5)
     replace_xyz(myfile)
     time.sleep(5)
     Energy0=extract_Energy(myfile)
     HOMO, LUMO= extract_HOMO_LUMO(myfile)
-    make_ts_file(mybasis,myfile,myw,epsilon,run='energy',charge=1,spinmult=2)  #remove one electron
+    make_ts_file(mybasis,myfile,myw,run='energy',charge=1,spinmult=2)  #remove one electron
     make_sh_file(myfile)
     time.sleep(5)
     Energy_0p1=extract_Energy(myfile)
-    make_ts_file(mybasis,myfile,myw,epsilon,run='minimize',charge=-1,spinmult=2) #add one electron
+    make_ts_file(mybasis,myfile,myw,run='minimize',charge=-1,spinmult=2) #add one electron
     make_sh_file(myfile)
     time.sleep(5)
     replace_xyz(myfile,new_file=True)
     time.sleep(5)
     Energy_n1=extract_Energy(myfile)
     myfile2=myfile+'add_E' #new file
-    make_ts_file(mybasis,myfile2,myw,epsilon,run='energy',charge=0,spinmult=1)  
+    make_ts_file(mybasis,myfile2,myw,run='energy',charge=0,spinmult=1)  
     make_sh_file(myfile2)
     time.sleep(5)
     Energy_n1p0=extract_Energy(myfile2)
@@ -314,15 +315,17 @@ def w_tuning(mybasis,myw,myfile,epsilon):
     return error
 
 
-def gss(J, a, b,mybasis,myfile,epsilon,tol=0.01):
+def gss(J, a, b,mybasis,myfile,tol=0.01):
     listofw=open('./w_file.txt', 'a+')
+    listofw.write('start'+'\n')
+    listofw.flush()
     gr = (math.sqrt(5) + 1) / 2
     c = b - (b - a) / gr
     d = a + (b - a) / gr
     while abs(b - a) > tol:
-        J1=w_tuning(mybasis,c,myfile,epsilon)
+        J1=w_tuning(mybasis,c,myfile)
         time.sleep(10)
-        J2=w_tuning(mybasis,d,myfile,epsilon)
+        J2=w_tuning(mybasis,d,myfile)
         if J1<J2:
             b = d
         else:
@@ -330,7 +333,7 @@ def gss(J, a, b,mybasis,myfile,epsilon,tol=0.01):
         txt='w1= '+ str(c)+ 'J1= '+ str(J1)+'w2= '+ str(d) + ' J2= '+str(J2)
         listofw.write(str(myfile)+' '+txt)
         listofw.write('\n')
-        listofw.close()
+        listofw.flush()
         print(str(myfile)+' '+txt+'\n')
         c = b - (b - a) / gr
         d = a + (b - a) / gr
@@ -382,15 +385,24 @@ def extractexcitation(idname,datafile,angle,typeE):
                 f.write('\n')
                 print(line, i)
 
-
 mybasis='def2-svp'
 myfilelist=['BS17-SO']
 filename = './w_file.txt'
 with open(filename, 'w') as file:
     pass
 
+#mybasislist=['sto-3g','6-31g','def2-svp']
+#for myfile in myfilelist:
+#    for basis in mybasislist:
+#        jobtype,filename=make_ts_file_op(basis,myfile,'wpbeh',w=0.1,epsilon=2.38,dispersion='no', highmethod1='no',highmethod2='no')
+#        make_sh_file(filename)
+#        time.sleep(2)
+#        replace_xyz(myfile,new_file=False)
+#time.sleep(30)
+
+mybasis='def2-svp'
 for myfile in myfilelist:
-    w_final=gss(w_tuning,0.0001,0.06,mybasis,myfile,epsilon=2.3741)
+    w_final=gss(w_tuning,0.0001,0.06,mybasis,myfile)
     make_ts_file(mybasis,myfile,w_final)
     make_sh_file(myfile)
     time.sleep(10)
@@ -398,7 +410,9 @@ for myfile in myfilelist:
     mynewco=myfile+str(w_final)+'.xyz'
     os.rename(myco, mynewco)
     time.sleep(30)
-    jobtype,filename=make_ts_file_op(mybasis,myfile+str(w_final),'wpbeh',w=w_final,epsilon=8.93,run='energy',restricted='yes', excited='yes', state=10)
+    jobtype,filename=make_ts_file_op(mybasis,myfile+str(w_final),'wpbeh',w=w_final,epsilon=6.12,run='energy',restricted='no', excited='yes', state=6)
     make_sh_file(filename)
     time.sleep(10)
+
+
 
