@@ -110,11 +110,6 @@ def make_ts_file(mybasis,myfile,myw,run='minimize',charge=0,spinmult=1):
     rc_w='rc_w '+str(myw)
     myco=myfile+'.xyz'
     filename=myfile
-    if (run=='minimize'and charge==-1):
-        thepath=myfile+'add_E.xyz'
-        filename=myfile+'add_E'
-        if os.path.isfile(thepath):
-            myco=myfile+'add_E.xyz'   
     coordinates='coordinates    '+myco
     openfile=myfile+'.ts'
     charge1='charge          '+str(charge)
@@ -290,26 +285,35 @@ def replace_xyz(myfile,new_file=False):
     write_newxyz.close()
 
 def w_tuning(mybasis,myw,myfile):
-    make_ts_file(mybasis,myfile,myw)
+    listofw2=open('./w_error.txt', 'a+')
+    make_ts_file(mybasis,myfile,myw) #1
     make_sh_file(myfile)
-    time.sleep(5)
+    listofw2.write('1 '+ str(myfile)+'\n')
+    listofw2.flush()
+    time.sleep(15)
     replace_xyz(myfile)
-    time.sleep(5)
+    time.sleep(15)
     Energy0=extract_Energy(myfile)
     HOMO, LUMO= extract_HOMO_LUMO(myfile)
-    make_ts_file(mybasis,myfile,myw,run='energy',charge=1,spinmult=2)  #remove one electron
+    make_ts_file(mybasis,myfile,myw,run='energy',charge=1,spinmult=2)  #remove one electron 2
     make_sh_file(myfile)
-    time.sleep(5)
+    listofw2.write('2 '+ str(myfile)+'\n')
+    listofw2.flush()
+    time.sleep(15)
     Energy_0p1=extract_Energy(myfile)
-    make_ts_file(mybasis,myfile,myw,run='minimize',charge=-1,spinmult=2) #add one electron
+    make_ts_file(mybasis,myfile,myw,run='minimize',charge=-1,spinmult=2) #add one electron 3
     make_sh_file(myfile)
-    time.sleep(5)
     myfile2=myfile+'add_E' #new file
+    listofw2.write('3 '+ str(myfile)+'\n')
+    listofw2.flush()
+    time.sleep(15)
     replace_xyz(myfile,new_file=True)
-    time.sleep(5)
+    time.sleep(15)
     Energy_n1=extract_Energy(myfile)
-    make_ts_file(mybasis,myfile2,myw,run='energy',charge=0,spinmult=1)  
+    make_ts_file(mybasis,myfile2,myw,run='energy',charge=0,spinmult=1)  #4
     make_sh_file(myfile2)
+    listofw2.write('4 '+ str(myfile2)+'\n')
+    listofw2.flush()
     time.sleep(15)
     Energy_n1p0=extract_Energy(myfile2)
     errorH=(float(Energy0)-float(Energy_0p1))-float(HOMO)
@@ -318,7 +322,7 @@ def w_tuning(mybasis,myw,myfile):
     return error
 
 
-def gss(J, a, b,mybasis,myfile,tol=0.01):
+def gss(J, a, b,mybasis,myfile,tol=0.001):
     listofw=open('./w_file.txt', 'a+')
     listofw.write('start'+'\n')
     listofw.flush()
@@ -390,9 +394,14 @@ def extractexcitation(idname,datafile,angle,typeE):
 
 mybasis='def2-svp'
 myfilelist=['BS17-SO']
-filename = './w_file.txt'
-with open(filename, 'w') as file:
+filename0 = './w_file.txt'
+with open(filename0, 'w') as file:
     pass
+
+filename1 = './w_error.txt'
+with open(filename1, 'w') as file:
+    pass
+
 
 #mybasislist=['sto-3g','6-31g','def2-svp']
 #for myfile in myfilelist:
@@ -405,7 +414,7 @@ with open(filename, 'w') as file:
 
 mybasis='def2-svp'
 for myfile in myfilelist:
-    w_final=gss(w_tuning,0.0001,0.06,mybasis,myfile)
+    w_final=gss(w_tuning,0.028,0.032,mybasis,myfile)
     make_ts_file(mybasis,myfile,w_final)
     make_sh_file(myfile)
     time.sleep(10)
