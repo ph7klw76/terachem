@@ -12,7 +12,7 @@ def read_theoretical_data(filename):
 def read_experimental_data(filename):
     data = np.loadtxt(filename)
     energy_exp = data[:, 0]  # Energy in eV
-    absorbance_exp = data[:, 1]  # Absorbance (arbitrary units)
+    energy_exp = 1239.8/data[:, 0]  # Energy in eV
     return energy_exp, absorbance_exp
 
 # Gaussian function for broadening
